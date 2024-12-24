@@ -1,40 +1,29 @@
-import pickle
-import dotenv
-dotenv.load_dotenv()
 import os
-from flask import Flask,jsonify,request
-from flask_restful import Resource, Api
-from KiteFunc import LoginKite
-from kiteconnect import KiteTicker
-from flask_cors import CORS
-from flask_socketio import SocketIO,emit
-from threading import Lock
-import random
-from utils import get_instrument_tokens,DATETIME_FORMAT
 import json
-import datetime as dt
-import threading
-import os
 import uuid
-from constants import *
-
-import json
+import random
+import pickle
 import datetime as dt
 import threading
+
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_restful import Api, Resource
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 from kiteconnect import KiteTicker
-from dotenv import load_dotenv
-from threading import Lock
-from utils import JSONEncoder
+
+from KiteFunc import LoginKite
+from utils import get_instrument_tokens, DATETIME_FORMAT, JSONEncoder
+from constants import *
 from blackScholes import generate_iv_details
+
 import pandas as pd
 import numpy as np
 
-# Load environment variables
 load_dotenv()
+
+
 
 os.makedirs('save_data',exist_ok=True)
 # App setup
@@ -44,7 +33,6 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 api = Api(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Initialize KiteTicker and WebSocket details
 kws = None
 instrument_tokens = []
 instrument_last_price= None
@@ -202,7 +190,6 @@ def on_ticks(ws, ticks):
 
                 next_min = None
 
-# Handle data request from client to set stock tokens
 @socketio.on('send_data')
 def handle_send_data(finput):
     global instrument_tokens,instrument_token_2_symbol_mapper,instrument_last_price,kite_obj,input_instruments,current_orders_dataframe,prev_orders_dataframe,price_change,prev_instrument_last_price
@@ -232,13 +219,11 @@ def handle_send_data(finput):
 
 
 
-# Start KiteTicker in a separate thread
 def start_kite_ticker():
     global kws
     login_details = json.load(open('kite_details.json', 'r'))
     kws = KiteTicker(os.getenv('API_KEY'), login_details['access_token'])
 
-    # Set WebSocket callbacks
     kws.on_connect = on_connect
     kws.on_close = on_close
     kws.on_error = on_error
@@ -246,10 +231,8 @@ def start_kite_ticker():
     kws.on_noreconnect = on_noreconnect
     kws.on_ticks = on_ticks
 
-    # Connect to Kite WebSocket
     kws.connect()
 
-# Start KiteTicker thread on server startup
 threading.Thread(target=start_kite_ticker).start()
 
 
@@ -260,14 +243,14 @@ class Login(Resource):
         print(login_details)
         # login_details = {
         #             "success":True,
-        #             "request_token": "mC4uqsmnN6jse3XcLl9oGgp7KHflLkfR",
-        #             "user_type": "individual/ind_with_nom",
-        #             "email": "kakalkrishnarao@gmail.com",
-        #             "user_name": "Kakal Krishna Rao",
-        #             "user_id": "RK2267",
-        #             "api_key": "pv2830q1vbrhu1eu",
-        #             "access_token": "12OJk4cblOuhh1eef10mxO8xL2RhTduG",
-        #             "public_token": "Q6p3Cm7Oe5iYEP26GWCqeFE0vVkept8k",
+        #             "request_token": "",
+        #             "user_type": "",
+        #             "email": "",
+        #             "user_name": "",
+        #             "user_id": "",
+        #             "api_key": "",
+        #             "access_token": "",
+        #             "public_token": "",
         #             "meta": { "demat_consent": "physical" }
         #             }
         json.dump(login_details,open('kite_details.json','w'))
@@ -276,7 +259,6 @@ class Login(Resource):
 
 api.add_resource(Login, '/login')
 
-# Run the Flask-SocketIO application
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000)
 

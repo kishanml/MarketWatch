@@ -9,6 +9,7 @@ instance/*
 kite_details.json
 data.json
 kite_obj.pkl
+app_2.py
 
 ### Flask.Python Stack ###
 # Byte-compiled / optimized / DLL files
